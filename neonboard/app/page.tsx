@@ -47,7 +47,6 @@ export default function BillboardApp() {
   const [frame, setFrame] = useState("neon");
   const [slogan, setSlogan] = useState("");
   const [brandLogo, setBrandLogo] = useState(null);
-  const [brandLogoFile, setBrandLogoFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [gallery, setGallery] = useState([]);
@@ -57,18 +56,16 @@ export default function BillboardApp() {
   const [tab, setTab] = useState("ejemplos");
   const [confetti, setConfetti] = useState([]);
   const [bgPreview, setBgPreview] = useState(null);
-  const fileRef = useRef<HTMLInputElement>(null);
-const logoRef = useRef<HTMLInputElement>(null);
-const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileRef = useRef(null);
+  const logoRef = useRef(null);
+  const canvasRef = useRef(null);
 
-  // Preview del fondo seleccionado
   useEffect(() => {
     const selected = BACKGROUNDS.find(b => b.id === bg);
-    if (selected?.url) setBgPreview(selected.url);
-    else if (selected?.color) setBgPreview(null);
+    if (selected && selected.url) setBgPreview(selected.url);
+    else setBgPreview(null);
   }, [bg]);
 
-  // Confetti
   const launchConfetti = () => {
     const pieces = Array.from({ length: 60 }, (_, i) => ({
       id: i,
@@ -94,7 +91,6 @@ const canvasRef = useRef<HTMLCanvasElement>(null);
   const handleLogo = useCallback((file) => {
     if (!file) return;
     setBrandLogo(URL.createObjectURL(file));
-    setBrandLogoFile(file);
   }, []);
 
   const useExample = (example) => {
@@ -123,41 +119,29 @@ const canvasRef = useRef<HTMLCanvasElement>(null);
   };
 
   const drawFrame = (ctx, frameType) => {
-    const frames = {
-      neon: () => {
-        ctx.strokeStyle = "#00cfff"; ctx.lineWidth = 6; ctx.shadowColor = "#00cfff"; ctx.shadowBlur = 25;
-        ctx.strokeRect(120, 70, 560, 640);
-        ctx.strokeStyle = "#ff2d78"; ctx.lineWidth = 3; ctx.shadowColor = "#ff2d78"; ctx.shadowBlur = 15;
-        ctx.strokeRect(130, 80, 540, 620);
-      },
-      gold: () => {
-        const grad = ctx.createLinearGradient(120, 70, 680, 710);
-        grad.addColorStop(0, "#FFD700"); grad.addColorStop(0.5, "#FFF8DC"); grad.addColorStop(1, "#FFD700");
-        ctx.strokeStyle = grad; ctx.lineWidth = 10; ctx.shadowColor = "#FFD700"; ctx.shadowBlur = 20;
-        ctx.strokeRect(120, 70, 560, 640);
-      },
-      vintage: () => {
-        ctx.strokeStyle = "#8B4513"; ctx.lineWidth = 8; ctx.shadowColor = "#8B4513"; ctx.shadowBlur = 5;
-        ctx.strokeRect(115, 65, 570, 650);
-        ctx.strokeStyle = "#D2691E"; ctx.lineWidth = 3;
-        ctx.strokeRect(125, 75, 550, 630);
-        ctx.strokeRect(105, 55, 590, 670);
-      },
-      future: () => {
-        ctx.strokeStyle = "#00ff88"; ctx.lineWidth = 4; ctx.shadowColor = "#00ff88"; ctx.shadowBlur = 30;
-        ctx.strokeRect(120, 70, 560, 640);
-        for (let i = 0; i < 4; i++) {
-          ctx.beginPath(); ctx.arc(120 + (i > 1 ? 560 : 0), 70 + (i % 2 === 1 ? 640 : 0), 8, 0, Math.PI * 2);
-          ctx.fillStyle = "#00ff88"; ctx.fill();
-        }
-      },
-      minimal: () => {
-        ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2; ctx.shadowBlur = 0;
-        ctx.strokeRect(120, 70, 560, 640);
-      },
-    };
     ctx.shadowBlur = 0;
-    frames[frameType]?.();
+    if (frameType === "neon") {
+      ctx.strokeStyle = "#00cfff"; ctx.lineWidth = 6; ctx.shadowColor = "#00cfff"; ctx.shadowBlur = 25;
+      ctx.strokeRect(120, 70, 560, 640);
+      ctx.strokeStyle = "#ff2d78"; ctx.lineWidth = 3; ctx.shadowColor = "#ff2d78"; ctx.shadowBlur = 15;
+      ctx.strokeRect(130, 80, 540, 620);
+    } else if (frameType === "gold") {
+      const grad = ctx.createLinearGradient(120, 70, 680, 710);
+      grad.addColorStop(0, "#FFD700"); grad.addColorStop(0.5, "#FFF8DC"); grad.addColorStop(1, "#FFD700");
+      ctx.strokeStyle = grad; ctx.lineWidth = 10; ctx.shadowColor = "#FFD700"; ctx.shadowBlur = 20;
+      ctx.strokeRect(120, 70, 560, 640);
+    } else if (frameType === "vintage") {
+      ctx.strokeStyle = "#8B4513"; ctx.lineWidth = 8;
+      ctx.strokeRect(115, 65, 570, 650);
+      ctx.strokeStyle = "#D2691E"; ctx.lineWidth = 3;
+      ctx.strokeRect(125, 75, 550, 630);
+    } else if (frameType === "future") {
+      ctx.strokeStyle = "#00ff88"; ctx.lineWidth = 4; ctx.shadowColor = "#00ff88"; ctx.shadowBlur = 30;
+      ctx.strokeRect(120, 70, 560, 640);
+    } else if (frameType === "minimal") {
+      ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2;
+      ctx.strokeRect(120, 70, 560, 640);
+    }
     ctx.shadowBlur = 0;
   };
 
@@ -167,17 +151,15 @@ const canvasRef = useRef<HTMLCanvasElement>(null);
       const ctx = canvas.getContext("2d");
       canvas.width = 800; canvas.height = 1000;
 
-      const drawEverything = (bgReady) => {
+      const drawEverything = (bgImg) => {
         if (selectedBg.color) {
           ctx.fillStyle = selectedBg.color;
           ctx.fillRect(0, 0, 800, 1000);
         } else {
-          ctx.drawImage(bgReady, 0, 0, 800, 1000);
+          ctx.drawImage(bgImg, 0, 0, 800, 1000);
         }
-
         ctx.fillStyle = "rgba(0,0,0,0.2)";
         ctx.fillRect(120, 70, 560, 640);
-
         drawFrame(ctx, frame);
 
         const personImg = new Image();
@@ -188,13 +170,11 @@ const canvasRef = useRef<HTMLCanvasElement>(null);
           const ph = personImg.height * scale;
           const px = (800 - pw) / 2;
           const py = 1000 - ph - 20;
-
           ctx.shadowColor = "rgba(0,0,0,0.9)";
           ctx.shadowBlur = 40; ctx.shadowOffsetX = 12; ctx.shadowOffsetY = 12;
           ctx.drawImage(personImg, px, py - 120, pw, ph);
           ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
 
-          // Slogan
           if (slogan) {
             ctx.fillStyle = "rgba(0,0,0,0.6)";
             ctx.fillRect(100, 650, 600, 70);
@@ -206,7 +186,6 @@ const canvasRef = useRef<HTMLCanvasElement>(null);
             ctx.shadowBlur = 0;
           }
 
-          // Logo de marca
           if (brandLogo) {
             const logoImg = new Image();
             logoImg.onload = () => {
@@ -263,7 +242,7 @@ const canvasRef = useRef<HTMLCanvasElement>(null);
       const blob = await fetch(url).then(r => r.blob());
       const file = new File([blob], "billboard.png", { type: "image/png" });
       if (navigator.share && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: "Mi Billboard Viral ⚡", text: "Mirá mi billboard viral creado con NEONBOARD AI!" });
+        await navigator.share({ files: [file], title: "Mi Billboard Viral ⚡" });
       } else {
         const a = document.createElement("a"); a.href = url; a.download = `billboard-${Date.now()}.png`; a.click();
       }
@@ -274,25 +253,18 @@ const canvasRef = useRef<HTMLCanvasElement>(null);
     <div style={{ minHeight: "100vh", background: "#050508", fontFamily: "sans-serif", color: "#fff", padding: "20px", position: "relative", overflow: "hidden" }}>
       <canvas ref={canvasRef} style={{ display: "none" }} />
 
-      {/* Confetti */}
       {confetti.map(p => (
         <div key={p.id} style={{
           position: "fixed", left: `${p.x}%`, top: "-20px",
           width: p.size, height: p.size, background: p.color,
           borderRadius: "2px", zIndex: 9999,
           animation: `fall ${1.5 + p.delay}s ease-in forwards`,
-          animationDelay: `${p.delay * 0.3}s`,
         }} />
       ))}
 
-      <style>{`
-        @keyframes fall { to { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
-        @keyframes shimmer { 0%,100%{opacity:.6} 50%{opacity:1} }
-      `}</style>
+      <style>{`@keyframes fall { to { transform: translateY(110vh) rotate(720deg); opacity: 0; } }`}</style>
 
       <div style={{ maxWidth: 520, margin: "0 auto" }}>
-
-        {/* Header */}
         <div style={{ textAlign: "center", marginBottom: 24 }}>
           <h1 style={{ fontSize: 30, background: "linear-gradient(90deg,#ff2d78,#ff9500)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontWeight: 900, letterSpacing: 2 }}>
             ⚡ NEONBOARD AI
@@ -300,7 +272,6 @@ const canvasRef = useRef<HTMLCanvasElement>(null);
           <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13 }}>Poné tu foto en un billboard viral</p>
         </div>
 
-        {/* Tabs */}
         <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
           {[["ejemplos", "✨ Ejemplos"], ["crear", "🎨 Crear"], ["galeria", "🖼️ Galería"]].map(([t, label]) => (
             <button key={t} onClick={() => setTab(t)}
@@ -310,7 +281,6 @@ const canvasRef = useRef<HTMLCanvasElement>(null);
           ))}
         </div>
 
-        {/* TAB EJEMPLOS */}
         {tab === "ejemplos" && (
           <div>
             <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, marginBottom: 14 }}>Tocá un ejemplo para usarlo como base 👇</p>
@@ -322,9 +292,7 @@ const canvasRef = useRef<HTMLCanvasElement>(null);
                   <div style={{ padding: "10px 12px" }}>
                     <div style={{ fontSize: 13, fontWeight: 600 }}>{ex.emoji} {ex.label}</div>
                     <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>{ex.desc}</div>
-                    <div style={{ marginTop: 8, padding: "5px", background: "rgba(255,45,120,0.15)", border: "1px solid rgba(255,45,120,0.3)", borderRadius: 6, fontSize: 11, textAlign: "center", color: "#ff2d78", fontWeight: 600 }}>
-                      Usar →
-                    </div>
+                    <div style={{ marginTop: 8, padding: "5px", background: "rgba(255,45,120,0.15)", border: "1px solid rgba(255,45,120,0.3)", borderRadius: 6, fontSize: 11, textAlign: "center", color: "#ff2d78", fontWeight: 600 }}>Usar →</div>
                   </div>
                 </div>
               ))}
@@ -332,10 +300,8 @@ const canvasRef = useRef<HTMLCanvasElement>(null);
           </div>
         )}
 
-        {/* TAB CREAR */}
         {tab === "crear" && (
           <div>
-            {/* Foto */}
             <div style={{ marginBottom: 18 }}>
               <p style={{ fontSize: 11, letterSpacing: 3, color: "#ff2d78", marginBottom: 8 }}>01 · TU FOTO O PRODUCTO</p>
               <div onClick={() => fileRef.current.click()}
@@ -351,34 +317,27 @@ const canvasRef = useRef<HTMLCanvasElement>(null);
               <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={e => handleFile(e.target.files[0])} />
             </div>
 
-            {/* Slogan */}
             <div style={{ marginBottom: 18 }}>
               <p style={{ fontSize: 11, letterSpacing: 3, color: "#ff2d78", marginBottom: 8 }}>02 · SLOGAN (OPCIONAL)</p>
-              <input
-                style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 14px", color: "#fff", fontSize: 14, boxSizing: "border-box" }}
-                placeholder="Ej: Just Do It · Tu mejor versión"
-                value={slogan}
-                onChange={e => setSlogan(e.target.value)}
-              />
+              <input style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 14px", color: "#fff", fontSize: 14, boxSizing: "border-box" }}
+                placeholder="Ej: Just Do It · Tu mejor versión" value={slogan} onChange={e => setSlogan(e.target.value)} />
             </div>
 
-            {/* Logo marca */}
             <div style={{ marginBottom: 18 }}>
-              <p style={{ fontSize: 11, letterSpacing: 3, color: "#ff2d78", marginBottom: 8 }}>03 · TU LOGO DE MARCA (OPCIONAL)</p>
+              <p style={{ fontSize: 11, letterSpacing: 3, color: "#ff2d78", marginBottom: 8 }}>03 · TU LOGO (OPCIONAL)</p>
               <div onClick={() => logoRef.current.click()}
                 style={{ border: "1px dashed rgba(255,255,255,0.2)", borderRadius: 10, padding: "12px", textAlign: "center", cursor: "pointer", display: "flex", alignItems: "center", gap: 12 }}>
                 {brandLogo
                   ? <img src={brandLogo} alt="logo" style={{ width: 50, height: 50, objectFit: "contain", borderRadius: 8 }} />
                   : <div style={{ fontSize: 28 }}>🏷️</div>
                 }
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>{brandLogo ? "Logo cargado ✅ (tocá para cambiar)" : "Subí tu logo para agregarlo al billboard"}</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>{brandLogo ? "Logo cargado ✅" : "Subí tu logo para agregarlo"}</div>
               </div>
               <input ref={logoRef} type="file" accept="image/*" style={{ display: "none" }} onChange={e => handleLogo(e.target.files[0])} />
             </div>
 
-            {/* Marco */}
             <div style={{ marginBottom: 18 }}>
-              <p style={{ fontSize: 11, letterSpacing: 3, color: "#ff2d78", marginBottom: 8 }}>04 · MARCO DEL BILLBOARD</p>
+              <p style={{ fontSize: 11, letterSpacing: 3, color: "#ff2d78", marginBottom: 8 }}>04 · MARCO</p>
               <div style={{ display: "flex", gap: 8 }}>
                 {FRAMES.map(f => (
                   <button key={f.id} onClick={() => setFrame(f.id)}
@@ -390,12 +349,9 @@ const canvasRef = useRef<HTMLCanvasElement>(null);
               </div>
             </div>
 
-            {/* Fondo con preview */}
             <div style={{ marginBottom: 20 }}>
               <p style={{ fontSize: 11, letterSpacing: 3, color: "#ff2d78", marginBottom: 8 }}>05 · FONDO</p>
-              {bgPreview && (
-                <img src={bgPreview} alt="preview fondo" style={{ width: "100%", height: 100, objectFit: "cover", borderRadius: 10, marginBottom: 10, opacity: 0.7 }} />
-              )}
+              {bgPreview && <img src={bgPreview} alt="preview" style={{ width: "100%", height: 100, objectFit: "cover", borderRadius: 10, marginBottom: 10, opacity: 0.7 }} />}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
                 {BACKGROUNDS.map(b => (
                   <button key={b.id} onClick={() => setBg(b.id)}
@@ -407,7 +363,6 @@ const canvasRef = useRef<HTMLCanvasElement>(null);
               </div>
             </div>
 
-            {/* Botón */}
             <button onClick={generate} disabled={loading}
               style={{ width: "100%", padding: "18px", background: "linear-gradient(135deg,#ff2d78,#ff6b00)", border: "none", borderRadius: 14, color: "#fff", fontSize: 16, fontWeight: 700, cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.8 : 1 }}>
               {loading ? `⚡ ${status} ${Math.round(progress)}%` : "⚡ CREAR BILLBOARD VIRAL"}
@@ -430,20 +385,15 @@ const canvasRef = useRef<HTMLCanvasElement>(null);
                     📤 Compartir
                   </button>
                   <button onClick={() => { const a = document.createElement("a"); a.href = result; a.download = `billboard-${Date.now()}.png`; a.click(); }}
-                    style={{ flex: 1, padding: "12px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontSize: 13, cursor: "pointer" }}>
-                    ⬇️
-                  </button>
+                    style={{ flex: 1, padding: "12px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontSize: 13, cursor: "pointer" }}>⬇️</button>
                   <button onClick={() => { setResult(null); setPhoto(null); setPhotoFile(null); setPhotoUrl(null); }}
-                    style={{ flex: 1, padding: "12px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontSize: 13, cursor: "pointer" }}>
-                    🔄
-                  </button>
+                    style={{ flex: 1, padding: "12px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontSize: 13, cursor: "pointer" }}>🔄</button>
                 </div>
               </div>
             )}
           </div>
         )}
 
-        {/* TAB GALERÍA */}
         {tab === "galeria" && (
           <div>
             {gallery.length === 0
@@ -462,13 +412,9 @@ const canvasRef = useRef<HTMLCanvasElement>(null);
                         <img src={g.url} alt="billboard" style={{ width: "100%", height: 150, objectFit: "cover" }} />
                         <div style={{ display: "flex", gap: 6, padding: 8 }}>
                           <button onClick={() => share(g.url)}
-                            style={{ flex: 1, padding: "6px", background: "rgba(255,45,120,0.15)", border: "1px solid rgba(255,45,120,0.3)", borderRadius: 6, color: "#ff2d78", fontSize: 11, cursor: "pointer" }}>
-                            📤 Compartir
-                          </button>
+                            style={{ flex: 1, padding: "6px", background: "rgba(255,45,120,0.15)", border: "1px solid rgba(255,45,120,0.3)", borderRadius: 6, color: "#ff2d78", fontSize: 11, cursor: "pointer" }}>📤</button>
                           <button onClick={() => { const a = document.createElement("a"); a.href = g.url; a.download = `billboard-${g.id}.png`; a.click(); }}
-                            style={{ flex: 1, padding: "6px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, color: "#fff", fontSize: 11, cursor: "pointer" }}>
-                            ⬇️ Bajar
-                          </button>
+                            style={{ flex: 1, padding: "6px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, color: "#fff", fontSize: 11, cursor: "pointer" }}>⬇️</button>
                         </div>
                       </div>
                     ))}
@@ -477,7 +423,6 @@ const canvasRef = useRef<HTMLCanvasElement>(null);
             }
           </div>
         )}
-
       </div>
     </div>
   );
