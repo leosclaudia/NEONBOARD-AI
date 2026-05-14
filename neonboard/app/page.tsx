@@ -57,9 +57,9 @@ export default function BillboardApp() {
   const [tab, setTab] = useState("ejemplos");
   const [confetti, setConfetti] = useState([]);
   const [bgPreview, setBgPreview] = useState(null);
-  const fileRef = useRef();
-  const logoRef = useRef();
-  const canvasRef = useRef();
+  const fileRef = useRef<HTMLInputElement>(null);
+const logoRef = useRef<HTMLInputElement>(null);
+const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Preview del fondo seleccionado
   useEffect(() => {
