@@ -282,65 +282,27 @@ export default function BillboardApp() {
               <div style={{ position:"absolute",top:5,right:-12,width:12,height:"calc(100% - 10px)",background:`linear-gradient(to right,${scene.accent}40,transparent)`,borderRadius:"0 4px 4px 0",zIndex:0 }} />
               <div style={{ position:"absolute",bottom:-9,left:5,width:"calc(100% - 10px)",height:9,background:`linear-gradient(to bottom,${scene.accent}30,transparent)`,borderRadius:"0 0 4px 4px",zIndex:0 }} />
 
-              {/* Billboard frame — bg photo lives here, clipped */}
-              <div
-                style={{
-                  position:"relative",
-                  borderRadius:15,
-                  overflow:"hidden",    /* bg stays inside */
-                  aspectRatio:"4/5",
-                  border:`5px solid ${scene.accent}`,
-                  boxShadow:`0 0 40px ${scene.accent}55,0 0 80px ${scene.accent}28`,
-                }}
-              >
-                {/* Background photo */}
-                <img
-                  src={scene.bg}
-                  alt="bg"
-                  style={{ position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",zIndex:0 }}
-                />
-                {/* Overlay — dark at bottom for text */}
-                <div style={{ position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(0,0,0,.0) 0%,rgba(0,0,0,.15) 45%,rgba(0,0,0,.78) 100%)",zIndex:1 }} />
-                <div className="sweep" />
-
-                {/* Brand */}
-                <div style={{ position:"absolute",top:"4%",left:"5%",zIndex:7,background:"rgba(0,0,0,.58)",backdropFilter:"blur(6px)",borderRadius:7,padding:"4px 9px",fontSize:9,fontWeight:900,color:scene.accent,letterSpacing:4 }}>
-                  {scene.brand}
+              {/* ── BILLBOARD overflow:visible → person breaks out top ── */}
+              <div style={{ position:"relative", borderRadius:15, overflow:"visible", aspectRatio:"4/5", border:`5px solid ${scene.accent}`, boxShadow:`0 0 40px ${scene.accent}55,0 0 80px ${scene.accent}28` }}>
+                {/* BG clipped inside its own div */}
+                <div style={{ position:"absolute",inset:0,borderRadius:11,overflow:"hidden",zIndex:0 }}>
+                  <img src={scene.bg} alt="bg" style={{ width:"100%",height:"100%",objectFit:"cover" }} />
+                  <div style={{ position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(0,0,0,.02) 0%,rgba(0,0,0,.18) 48%,rgba(0,0,0,.85) 100%)" }} />
                 </div>
-
+                <div className="sweep" />
+                {/* Brand */}
+                <div style={{ position:"absolute",top:"4%",left:"5%",zIndex:7,background:"rgba(0,0,0,.58)",backdropFilter:"blur(6px)",borderRadius:7,padding:"4px 9px",fontSize:9,fontWeight:900,color:scene.accent,letterSpacing:4 }}>{scene.brand}</div>
                 {/* Slogan */}
                 <div className="sp" style={{ "--ac":scene.accent,position:"absolute",bottom:"5%",left:"6%",right:"6%",zIndex:7,textAlign:"center" }}>
-                  <p style={{ margin:0,fontSize:14,fontWeight:900,color:"#fff",letterSpacing:2,lineHeight:1.3,textShadow:"0 2px 12px rgba(0,0,0,.95)" }}>
-                    {scene.slogan}
-                  </p>
+                  <p style={{ margin:0,fontSize:14,fontWeight:900,color:"#fff",letterSpacing:2,lineHeight:1.3,textShadow:"0 2px 12px rgba(0,0,0,.95)" }}>{scene.slogan}</p>
                 </div>
-
-                {/* Shadow under person — inside frame */}
-                <div className="p-shadow" style={{ position:"absolute",bottom:"20%",left:"50%",width:"48%",height:"3.5%",background:"radial-gradient(ellipse,rgba(0,0,0,.75) 0%,transparent 70%)",zIndex:4,borderRadius:"50%",pointerEvents:"none" }} />
-
-                {/* ── PERSON — inside frame, covers most of it ──
-                    No overflow tricks needed here.
-                    Person is just a large photo layered over the bg.
-                    It fills the upper 75% of the billboard naturally.
-                ── */}
+                {/* Shadow synced with float */}
+                <div className="p-shadow" style={{ position:"absolute",bottom:"-4%",left:"50%",width:"52%",height:"4%",background:"radial-gradient(ellipse,rgba(0,0,0,.82) 0%,transparent 70%)",zIndex:5,borderRadius:"50%",pointerEvents:"none" }} />
+                {/* PERSON — height>100% breaks above border */}
                 <img
-                  src={scene.person}
-                  alt="person"
-                  className="p-float"
-                  style={{
-                    position:"absolute",
-                    bottom:"18%",
-                    left:"50%",
-                    transform:"translateX(-50%)",
-                    width:"78%",
-                    height:"75%",
-                    objectFit:"cover",
-                    objectPosition:"top center",
-                    zIndex:5,
-                    borderRadius:"8px 8px 0 0",
-                    filter:"drop-shadow(0 16px 14px rgba(0,0,0,.85))",
-                  }}
-                  onError={e => { e.target.style.display="none"; }}
+                  src={scene.person} alt="person" className="p-float"
+                  style={{ position:"absolute", bottom:"12%", left:"50%", transform:"translateX(-50%)", height:"148%", width:"auto", maxWidth:"88%", objectFit:"cover", objectPosition:"top center", zIndex:9, filter:"drop-shadow(0 22px 18px rgba(0,0,0,.95)) drop-shadow(0 5px 8px rgba(0,0,0,.7))" }}
+                  onError={e=>{e.target.style.display="none";}}
                 />
               </div>
             </div>
