@@ -39,6 +39,29 @@ const EXAMPLES = [
   { id: 6, label: "Atleta", emoji: "🏃", photo: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400", bg: "stadium1", desc: "Deportista en estadio" },
 ];
 
+const FRAME_STYLES = {
+  neon: {
+    border: "6px solid #00cfff",
+    boxShadow: "0 0 30px #00cfff, inset 0 0 30px rgba(0,207,255,0.1), 0 0 60px rgba(255,45,120,0.4)",
+  },
+  gold: {
+    border: "10px solid #FFD700",
+    boxShadow: "0 0 30px #FFD700, inset 0 0 20px rgba(255,215,0,0.1)",
+  },
+  vintage: {
+    border: "8px solid #8B4513",
+    boxShadow: "0 0 0 4px #D2691E, 0 0 0 8px #8B4513",
+  },
+  future: {
+    border: "4px solid #00ff88",
+    boxShadow: "0 0 40px #00ff88, inset 0 0 20px rgba(0,255,136,0.05), 0 0 80px rgba(0,136,255,0.3)",
+  },
+  minimal: {
+    border: "2px solid rgba(255,255,255,0.8)",
+    boxShadow: "0 0 20px rgba(255,255,255,0.1)",
+  },
+};
+
 export default function BillboardApp() {
   const [photo, setPhoto] = useState(null);
   const [photoFile, setPhotoFile] = useState(null);
@@ -48,8 +71,7 @@ export default function BillboardApp() {
   const [slogan, setSlogan] = useState("");
   const [brandLogo, setBrandLogo] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
-  const [gallery, setGallery] = useState([]);
+  const [personBlob, setPersonBlob] = useState(null);
   const [error, setError] = useState(null);
   const [status, setStatus] = useState("");
   const [progress, setProgress] = useState(0);
@@ -58,7 +80,6 @@ export default function BillboardApp() {
   const [bgPreview, setBgPreview] = useState(null);
   const fileRef = useRef(null);
   const logoRef = useRef(null);
-  const canvasRef = useRef(null);
 
   useEffect(() => {
     const selected = BACKGROUNDS.find(b => b.id === bg);
@@ -83,7 +104,7 @@ export default function BillboardApp() {
     setPhoto(URL.createObjectURL(file));
     setPhotoFile(file);
     setPhotoUrl(null);
-    setResult(null);
+    setPersonBlob(null);
     setError(null);
     setTab("crear");
   }, []);
@@ -98,7 +119,7 @@ export default function BillboardApp() {
     setPhotoFile(null);
     setPhoto(example.photo);
     setBg(example.bg);
-    setResult(null);
+    setPersonBlob(null);
     setError(null);
     setTab("crear");
   };
@@ -118,146 +139,15 @@ export default function BillboardApp() {
     return await res.blob();
   };
 
-  const drawFrame = (ctx, frameType, W, H) => {
-    const mx = 60, my = 60, mw = W - 120, mh = H - 120;
-    ctx.shadowBlur = 0;
-    if (frameType === "neon") {
-      ctx.strokeStyle = "#00cfff"; ctx.lineWidth = 8; ctx.shadowColor = "#00cfff"; ctx.shadowBlur = 40;
-      ctx.strokeRect(mx, my, mw, mh);
-      ctx.strokeStyle = "#ff2d78"; ctx.lineWidth = 4; ctx.shadowColor = "#ff2d78"; ctx.shadowBlur = 25;
-      ctx.strokeRect(mx + 12, my + 12, mw - 24, mh - 24);
-      ctx.lineWidth = 6; ctx.strokeStyle = "#fff"; ctx.shadowColor = "#fff"; ctx.shadowBlur = 15;
-      [[mx, my], [mx+mw, my], [mx, my+mh], [mx+mw, my+mh]].forEach(([cx, cy]) => {
-        const s = 30, dx = cx === mx ? 1 : -1, dy = cy === my ? 1 : -1;
-        ctx.beginPath(); ctx.moveTo(cx + dx*s, cy); ctx.lineTo(cx, cy); ctx.lineTo(cx, cy + dy*s); ctx.stroke();
-      });
-    } else if (frameType === "gold") {
-      const grad = ctx.createLinearGradient(mx, my, mx+mw, my+mh);
-      grad.addColorStop(0, "#FFD700"); grad.addColorStop(0.5, "#FFF8DC"); grad.addColorStop(1, "#FFD700");
-      ctx.strokeStyle = grad; ctx.lineWidth = 14; ctx.shadowColor = "#FFD700"; ctx.shadowBlur = 30;
-      ctx.strokeRect(mx, my, mw, mh);
-      ctx.strokeStyle = "#8B6914"; ctx.lineWidth = 4; ctx.shadowBlur = 0;
-      ctx.strokeRect(mx+10, my+10, mw-20, mh-20);
-    } else if (frameType === "vintage") {
-      ctx.strokeStyle = "#8B4513"; ctx.lineWidth = 10;
-      ctx.strokeRect(mx, my, mw, mh);
-      ctx.strokeStyle = "#D2691E"; ctx.lineWidth = 4;
-      ctx.strokeRect(mx+12, my+12, mw-24, mh-24);
-      ctx.strokeStyle = "#F4A460"; ctx.lineWidth = 2;
-      ctx.strokeRect(mx+22, my+22, mw-44, mh-44);
-    } else if (frameType === "future") {
-      ctx.strokeStyle = "#00ff88"; ctx.lineWidth = 5; ctx.shadowColor = "#00ff88"; ctx.shadowBlur = 40;
-      ctx.strokeRect(mx, my, mw, mh);
-      ctx.strokeStyle = "#0088ff"; ctx.lineWidth = 2; ctx.shadowColor = "#0088ff"; ctx.shadowBlur = 20;
-      ctx.strokeRect(mx+14, my+14, mw-28, mh-28);
-    } else if (frameType === "minimal") {
-      ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 3;
-      ctx.strokeRect(mx, my, mw, mh);
-    }
-    ctx.shadowBlur = 0;
-  };
-
-  const compose = async (personBlob, selectedBg) => {
-    return new Promise((resolve, reject) => {
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext("2d");
-      const W = 900, H = 1100;
-      canvas.width = W; canvas.height = H;
-
-      const drawEverything = (bgImg) => {
-        if (selectedBg.color) {
-          ctx.fillStyle = selectedBg.color;
-          ctx.fillRect(0, 0, W, H);
-        } else {
-          ctx.drawImage(bgImg, 0, 0, W, H);
-        }
-        ctx.fillStyle = "rgba(0,0,0,0.15)";
-        ctx.fillRect(0, 0, W, H);
-        ctx.fillStyle = "rgba(0,0,0,0.4)";
-        ctx.beginPath();
-        ctx.ellipse(W/2 + 10, H - 30, 280, 40, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "rgba(0,0,0,0.25)";
-        ctx.fillRect(60, 60, W - 120, H - 120);
-        drawFrame(ctx, frame, W, H);
-
-        const personImg = new Image();
-        const personUrl = URL.createObjectURL(personBlob);
-        personImg.onload = () => {
-          const maxW = W * 0.85;
-          const maxH = H * 1.05;
-          const scale = Math.min(maxW / personImg.width, maxH / personImg.height);
-          const pw = personImg.width * scale;
-          const ph = personImg.height * scale;
-          const px = (W - pw) / 2;
-          const py = H - ph + 60;
-
-          ctx.shadowColor = "rgba(0,0,0,0.95)";
-          ctx.shadowBlur = 80;
-          ctx.shadowOffsetX = 20;
-          ctx.shadowOffsetY = 30;
-          ctx.drawImage(personImg, px, py, pw, ph);
-          ctx.shadowColor = "rgba(0,0,50,0.5)";
-          ctx.shadowBlur = 40;
-          ctx.shadowOffsetX = -10;
-          ctx.shadowOffsetY = 15;
-          ctx.drawImage(personImg, px, py, pw, ph);
-          ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
-
-          if (slogan) {
-            ctx.fillStyle = "rgba(0,0,0,0.7)";
-            ctx.fillRect(80, H - 200, W - 160, 80);
-            ctx.font = "bold 38px Arial";
-            ctx.fillStyle = "#ffffff";
-            ctx.textAlign = "center";
-            ctx.shadowColor = "#ff2d78"; ctx.shadowBlur = 15;
-            ctx.fillText(slogan, W/2, H - 150);
-            ctx.shadowBlur = 0;
-          }
-
-          if (brandLogo) {
-            const logoImg = new Image();
-            logoImg.onload = () => {
-              ctx.drawImage(logoImg, W - 150, 80, 110, 110);
-              URL.revokeObjectURL(personUrl);
-              resolve(canvas.toDataURL("image/png"));
-            };
-            logoImg.src = brandLogo;
-          } else {
-            URL.revokeObjectURL(personUrl);
-            resolve(canvas.toDataURL("image/png"));
-          }
-        };
-        personImg.onerror = reject;
-        personImg.src = personUrl;
-      };
-
-      if (selectedBg.url) {
-        const bgImg = new Image();
-        bgImg.crossOrigin = "anonymous";
-        bgImg.onload = () => drawEverything(bgImg);
-        bgImg.onerror = reject;
-        bgImg.src = selectedBg.url;
-      } else {
-        drawEverything(null);
-      }
-    });
-  };
-
   const generate = async () => {
     if (!photo) { setError("Por favor elegí una foto o ejemplo primero"); return; }
-    setLoading(true); setResult(null); setError(null); setProgress(10);
+    setLoading(true); setPersonBlob(null); setError(null); setProgress(10);
     const interval = setInterval(() => setProgress(p => Math.min(p + 4, 85)), 400);
     try {
       setStatus("Quitando el fondo...");
-      const personBlob = await removeBg();
-      setProgress(65);
-      setStatus("Creando el billboard 3D...");
-      const selectedBg = BACKGROUNDS.find(b => b.id === bg);
-      const finalImage = await compose(personBlob, selectedBg);
+      const blob = await removeBg();
       setProgress(100); setStatus("¡Listo!");
-      setResult(finalImage);
-      setGallery(prev => [{ id: Date.now(), url: finalImage }, ...prev].slice(0, 6));
+      setPersonBlob(URL.createObjectURL(blob));
       launchConfetti();
     } catch (e) {
       setError(e.message);
@@ -266,60 +156,48 @@ export default function BillboardApp() {
     }
   };
 
-  const share = async (url) => {
-    try {
-      const blob = await fetch(url).then(r => r.blob());
-      const file = new File([blob], "billboard.png", { type: "image/png" });
-      if (navigator.share && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: "Mi Billboard Viral ⚡" });
-      } else {
-        const a = document.createElement("a"); a.href = url; a.download = `billboard-${Date.now()}.png`; a.click();
-      }
-    } catch (e) { console.error(e); }
-  };
+  const selectedBgData = BACKGROUNDS.find(b => b.id === bg);
+  const frameStyle = FRAME_STYLES[frame] || FRAME_STYLES.neon;
 
   return (
     <div style={{ minHeight: "100vh", background: "#050508", fontFamily: "sans-serif", color: "#fff", padding: "20px", position: "relative", overflow: "hidden" }}>
-      <canvas ref={canvasRef} style={{ display: "none" }} />
       {confetti.map(p => (
         <div key={p.id} style={{ position: "fixed", left: `${p.x}%`, top: "-20px", width: p.size, height: p.size, background: p.color, borderRadius: "2px", zIndex: 9999, animation: `fall ${1.5 + p.delay}s ease-in forwards` }} />
       ))}
       <style>{`
         @keyframes fall { to { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
-        @keyframes float3d {
-          0%   { transform: perspective(800px) rotateY(-3deg) rotateX(2deg) scale(1); }
-          25%  { transform: perspective(800px) rotateY(3deg) rotateX(-1deg) scale(1.02); }
-          50%  { transform: perspective(800px) rotateY(2deg) rotateX(3deg) scale(1.01); }
-          75%  { transform: perspective(800px) rotateY(-2deg) rotateX(-2deg) scale(1.02); }
-          100% { transform: perspective(800px) rotateY(-3deg) rotateX(2deg) scale(1); }
+        @keyframes personSway {
+          0%   { transform: translateX(-50%) translateY(0px) rotate(-0.5deg); }
+          25%  { transform: translateX(-50%) translateY(-14px) rotate(0.5deg); }
+          50%  { transform: translateX(-50%) translateY(-20px) rotate(-0.3deg); }
+          75%  { transform: translateX(-50%) translateY(-10px) rotate(0.4deg); }
+          100% { transform: translateX(-50%) translateY(0px) rotate(-0.5deg); }
         }
-        @keyframes glowPulse {
-          0%, 100% { box-shadow: 0 0 30px rgba(255,45,120,0.4), 0 0 60px rgba(0,207,255,0.2); }
-          50% { box-shadow: 0 0 50px rgba(255,45,120,0.7), 0 0 100px rgba(0,207,255,0.4); }
+        @keyframes shadowPulse {
+          0%, 100% { opacity: 0.6; transform: translateX(-50%) scaleX(1); }
+          50% { opacity: 0.25; transform: translateX(-50%) scaleX(0.8); }
         }
-        @keyframes scanline {
-          0% { background-position: 0 0; }
-          100% { background-position: 0 100px; }
+        @keyframes glowNeon {
+          0%, 100% { box-shadow: 0 0 30px #00cfff, 0 0 60px rgba(255,45,120,0.4); }
+          50% { box-shadow: 0 0 60px #00cfff, 0 0 120px rgba(255,45,120,0.7), 0 0 20px #fff; }
         }
-        .billboard-3d {
-          animation: float3d 4s ease-in-out infinite, glowPulse 2s ease-in-out infinite;
-          border-radius: 16px;
-          overflow: hidden;
-          position: relative;
+        @keyframes glowGold {
+          0%, 100% { box-shadow: 0 0 30px #FFD700; }
+          50% { box-shadow: 0 0 70px #FFD700, 0 0 20px #fff8dc; }
         }
-        .billboard-3d::after {
-          content: '';
-          position: absolute;
-          top: 0; left: 0; right: 0; bottom: 0;
-          background: repeating-linear-gradient(
-            0deg,
-            transparent,
-            transparent 3px,
-            rgba(0,207,255,0.03) 3px,
-            rgba(0,207,255,0.03) 4px
-          );
-          pointer-events: none;
-          animation: scanline 2s linear infinite;
+        @keyframes glowFuture {
+          0%, 100% { box-shadow: 0 0 40px #00ff88, 0 0 80px rgba(0,136,255,0.3); }
+          50% { box-shadow: 0 0 80px #00ff88, 0 0 160px rgba(0,136,255,0.6); }
+        }
+        .glow-neon { animation: glowNeon 2s ease-in-out infinite; }
+        .glow-gold { animation: glowGold 2s ease-in-out infinite; }
+        .glow-future { animation: glowFuture 2s ease-in-out infinite; }
+        .person-float {
+          animation: personSway 3.5s ease-in-out infinite;
+          filter: drop-shadow(0px 25px 20px rgba(0,0,0,0.95)) drop-shadow(0px 8px 8px rgba(0,0,0,0.8));
+        }
+        .shadow-blob {
+          animation: shadowPulse 3.5s ease-in-out infinite;
         }
       `}</style>
 
@@ -411,15 +289,62 @@ export default function BillboardApp() {
 
             {error && <div style={{ marginTop: 12, padding: "14px", background: "rgba(255,80,80,0.1)", border: "1px solid rgba(255,80,80,0.2)", borderRadius: 10, fontSize: 13, color: "#ff8080" }}>⚠️ {error}</div>}
 
-            {result && (
-              <div style={{ marginTop: 24 }}>
-                <div className="billboard-3d">
-                  <img src={result} alt="Tu billboard" style={{ width: "100%", display: "block" }} />
+            {personBlob && (
+              <div style={{ marginTop: 28 }}>
+                {/* BILLBOARD con persona flotando ENCIMA */}
+                <div
+                  className={`glow-${frame === "neon" ? "neon" : frame === "gold" ? "gold" : frame === "future" ? "future" : "neon"}`}
+                  style={{
+                    position: "relative",
+                    borderRadius: 18,
+                    overflow: "visible",
+                    ...frameStyle,
+                    aspectRatio: "3/4",
+                    background: selectedBgData?.color
+                      ? selectedBgData.color
+                      : `url(${selectedBgData?.url}) center/cover`,
+                    marginBottom: 60,
+                  }}
+                >
+                  {/* Overlay */}
+                  <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.2)", borderRadius: 14, zIndex: 1 }} />
+
+                  {/* Slogan */}
+                  {slogan && (
+                    <div style={{ position: "absolute", bottom: "6%", left: "5%", right: "5%", zIndex: 3, background: "rgba(0,0,0,0.7)", borderRadius: 10, padding: "10px", textAlign: "center", fontSize: 16, fontWeight: 700, color: "#fff", textShadow: "0 0 15px #ff2d78" }}>
+                      {slogan}
+                    </div>
+                  )}
+
+                  {/* Logo */}
+                  {brandLogo && (
+                    <img src={brandLogo} alt="logo" style={{ position: "absolute", top: "4%", right: "4%", width: "16%", zIndex: 4, borderRadius: 8, objectFit: "contain" }} />
+                  )}
+
+                  {/* Sombra de la persona */}
+                  <div className="shadow-blob" style={{ position: "absolute", bottom: "-5%", left: "50%", width: "55%", height: "5%", background: "radial-gradient(ellipse, rgba(0,0,0,0.8) 0%, transparent 70%)", zIndex: 2, borderRadius: "50%" }} />
+
+                  {/* PERSONA — sobresale arriba y abajo del marco */}
+                  <img
+                    src={personBlob}
+                    alt="persona"
+                    className="person-float"
+                    style={{
+                      position: "absolute",
+                      bottom: "-15%",
+                      left: "50%",
+                      height: "125%",
+                      width: "auto",
+                      maxWidth: "95%",
+                      zIndex: 5,
+                      objectFit: "contain",
+                    }}
+                  />
                 </div>
-                <div style={{ display: "flex", gap: 8, padding: "12px 0" }}>
-                  <button onClick={() => share(result)} style={{ flex: 2, padding: "12px", background: "linear-gradient(135deg,#ff2d78,#ff6b00)", border: "none", borderRadius: 10, color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>📤 Compartir</button>
-                  <button onClick={() => { const a = document.createElement("a"); a.href = result; a.download = `billboard-${Date.now()}.png`; a.click(); }} style={{ flex: 1, padding: "12px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontSize: 13, cursor: "pointer" }}>⬇️</button>
-                  <button onClick={() => { setResult(null); setPhoto(null); setPhotoFile(null); setPhotoUrl(null); }} style={{ flex: 1, padding: "12px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontSize: 13, cursor: "pointer" }}>🔄</button>
+
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => { const a = document.createElement("a"); a.href = personBlob; a.download = `billboard-${Date.now()}.png`; a.click(); }} style={{ flex: 2, padding: "12px", background: "linear-gradient(135deg,#ff2d78,#ff6b00)", border: "none", borderRadius: 10, color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>⬇️ Descargar</button>
+                  <button onClick={() => { setPersonBlob(null); setPhoto(null); setPhotoFile(null); setPhotoUrl(null); }} style={{ flex: 1, padding: "12px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontSize: 13, cursor: "pointer" }}>🔄 Nuevo</button>
                 </div>
               </div>
             )}
@@ -427,28 +352,10 @@ export default function BillboardApp() {
         )}
 
         {tab === "galeria" && (
-          <div>
-            {gallery.length === 0
-              ? <div style={{ textAlign: "center", padding: "60px 20px", color: "rgba(255,255,255,0.3)" }}>
-                  <div style={{ fontSize: 48 }}>🖼️</div>
-                  <div style={{ marginTop: 12, fontSize: 14 }}>Todavía no creaste ningún billboard</div>
-                  <button onClick={() => setTab("crear")} style={{ marginTop: 16, padding: "10px 24px", background: "rgba(255,45,120,0.2)", border: "1px solid rgba(255,45,120,0.4)", borderRadius: 10, color: "#ff2d78", cursor: "pointer", fontSize: 13 }}>Crear mi primer billboard →</button>
-                </div>
-              : <div>
-                  <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, marginBottom: 14 }}>Tus últimas creaciones 🎨</p>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                    {gallery.map(g => (
-                      <div key={g.id} style={{ borderRadius: 12, overflow: "hidden", border: "1px solid rgba(255,255,255,0.1)" }}>
-                        <img src={g.url} alt="billboard" style={{ width: "100%", height: 150, objectFit: "cover" }} />
-                        <div style={{ display: "flex", gap: 6, padding: 8 }}>
-                          <button onClick={() => share(g.url)} style={{ flex: 1, padding: "6px", background: "rgba(255,45,120,0.15)", border: "1px solid rgba(255,45,120,0.3)", borderRadius: 6, color: "#ff2d78", fontSize: 11, cursor: "pointer" }}>📤</button>
-                          <button onClick={() => { const a = document.createElement("a"); a.href = g.url; a.download = `billboard-${g.id}.png`; a.click(); }} style={{ flex: 1, padding: "6px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, color: "#fff", fontSize: 11, cursor: "pointer" }}>⬇️</button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-            }
+          <div style={{ textAlign: "center", padding: "60px 20px", color: "rgba(255,255,255,0.3)" }}>
+            <div style={{ fontSize: 48 }}>🖼️</div>
+            <div style={{ marginTop: 12, fontSize: 14 }}>Usá descargar para guardar tus billboards</div>
+            <button onClick={() => setTab("crear")} style={{ marginTop: 16, padding: "10px 24px", background: "rgba(255,45,120,0.2)", border: "1px solid rgba(255,45,120,0.4)", borderRadius: 10, color: "#ff2d78", cursor: "pointer", fontSize: 13 }}>Crear mi billboard →</button>
           </div>
         )}
       </div>
