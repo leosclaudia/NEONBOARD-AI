@@ -118,29 +118,41 @@ export default function BillboardApp() {
     return await res.blob();
   };
 
-  const drawFrame = (ctx, frameType) => {
+  const drawFrame = (ctx, frameType, W, H) => {
+    const mx = 60, my = 60, mw = W - 120, mh = H - 120;
     ctx.shadowBlur = 0;
     if (frameType === "neon") {
-      ctx.strokeStyle = "#00cfff"; ctx.lineWidth = 6; ctx.shadowColor = "#00cfff"; ctx.shadowBlur = 25;
-      ctx.strokeRect(120, 70, 560, 640);
-      ctx.strokeStyle = "#ff2d78"; ctx.lineWidth = 3; ctx.shadowColor = "#ff2d78"; ctx.shadowBlur = 15;
-      ctx.strokeRect(130, 80, 540, 620);
+      ctx.strokeStyle = "#00cfff"; ctx.lineWidth = 8; ctx.shadowColor = "#00cfff"; ctx.shadowBlur = 40;
+      ctx.strokeRect(mx, my, mw, mh);
+      ctx.strokeStyle = "#ff2d78"; ctx.lineWidth = 4; ctx.shadowColor = "#ff2d78"; ctx.shadowBlur = 25;
+      ctx.strokeRect(mx + 12, my + 12, mw - 24, mh - 24);
+      ctx.lineWidth = 6; ctx.strokeStyle = "#fff"; ctx.shadowColor = "#fff"; ctx.shadowBlur = 15;
+      [[mx, my], [mx+mw, my], [mx, my+mh], [mx+mw, my+mh]].forEach(([cx, cy]) => {
+        const s = 30, dx = cx === mx ? 1 : -1, dy = cy === my ? 1 : -1;
+        ctx.beginPath(); ctx.moveTo(cx + dx*s, cy); ctx.lineTo(cx, cy); ctx.lineTo(cx, cy + dy*s); ctx.stroke();
+      });
     } else if (frameType === "gold") {
-      const grad = ctx.createLinearGradient(120, 70, 680, 710);
+      const grad = ctx.createLinearGradient(mx, my, mx+mw, my+mh);
       grad.addColorStop(0, "#FFD700"); grad.addColorStop(0.5, "#FFF8DC"); grad.addColorStop(1, "#FFD700");
-      ctx.strokeStyle = grad; ctx.lineWidth = 10; ctx.shadowColor = "#FFD700"; ctx.shadowBlur = 20;
-      ctx.strokeRect(120, 70, 560, 640);
+      ctx.strokeStyle = grad; ctx.lineWidth = 14; ctx.shadowColor = "#FFD700"; ctx.shadowBlur = 30;
+      ctx.strokeRect(mx, my, mw, mh);
+      ctx.strokeStyle = "#8B6914"; ctx.lineWidth = 4; ctx.shadowBlur = 0;
+      ctx.strokeRect(mx+10, my+10, mw-20, mh-20);
     } else if (frameType === "vintage") {
-      ctx.strokeStyle = "#8B4513"; ctx.lineWidth = 8;
-      ctx.strokeRect(115, 65, 570, 650);
-      ctx.strokeStyle = "#D2691E"; ctx.lineWidth = 3;
-      ctx.strokeRect(125, 75, 550, 630);
+      ctx.strokeStyle = "#8B4513"; ctx.lineWidth = 10;
+      ctx.strokeRect(mx, my, mw, mh);
+      ctx.strokeStyle = "#D2691E"; ctx.lineWidth = 4;
+      ctx.strokeRect(mx+12, my+12, mw-24, mh-24);
+      ctx.strokeStyle = "#F4A460"; ctx.lineWidth = 2;
+      ctx.strokeRect(mx+22, my+22, mw-44, mh-44);
     } else if (frameType === "future") {
-      ctx.strokeStyle = "#00ff88"; ctx.lineWidth = 4; ctx.shadowColor = "#00ff88"; ctx.shadowBlur = 30;
-      ctx.strokeRect(120, 70, 560, 640);
+      ctx.strokeStyle = "#00ff88"; ctx.lineWidth = 5; ctx.shadowColor = "#00ff88"; ctx.shadowBlur = 40;
+      ctx.strokeRect(mx, my, mw, mh);
+      ctx.strokeStyle = "#0088ff"; ctx.lineWidth = 2; ctx.shadowColor = "#0088ff"; ctx.shadowBlur = 20;
+      ctx.strokeRect(mx+14, my+14, mw-28, mh-28);
     } else if (frameType === "minimal") {
-      ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2;
-      ctx.strokeRect(120, 70, 560, 640);
+      ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 3;
+      ctx.strokeRect(mx, my, mw, mh);
     }
     ctx.shadowBlur = 0;
   };
@@ -149,47 +161,64 @@ export default function BillboardApp() {
     return new Promise((resolve, reject) => {
       const canvas = canvasRef.current;
       const ctx = canvas.getContext("2d");
-      canvas.width = 800; canvas.height = 1000;
+      const W = 900, H = 1100;
+      canvas.width = W; canvas.height = H;
 
       const drawEverything = (bgImg) => {
         if (selectedBg.color) {
           ctx.fillStyle = selectedBg.color;
-          ctx.fillRect(0, 0, 800, 1000);
+          ctx.fillRect(0, 0, W, H);
         } else {
-          ctx.drawImage(bgImg, 0, 0, 800, 1000);
+          ctx.drawImage(bgImg, 0, 0, W, H);
         }
-        ctx.fillStyle = "rgba(0,0,0,0.2)";
-        ctx.fillRect(120, 70, 560, 640);
-        drawFrame(ctx, frame);
+        ctx.fillStyle = "rgba(0,0,0,0.15)";
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = "rgba(0,0,0,0.4)";
+        ctx.beginPath();
+        ctx.ellipse(W/2 + 10, H - 30, 280, 40, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "rgba(0,0,0,0.25)";
+        ctx.fillRect(60, 60, W - 120, H - 120);
+        drawFrame(ctx, frame, W, H);
 
         const personImg = new Image();
         const personUrl = URL.createObjectURL(personBlob);
         personImg.onload = () => {
-          const scale = Math.min(520 / personImg.width, 750 / personImg.height);
+          const maxW = W * 0.85;
+          const maxH = H * 1.05;
+          const scale = Math.min(maxW / personImg.width, maxH / personImg.height);
           const pw = personImg.width * scale;
           const ph = personImg.height * scale;
-          const px = (800 - pw) / 2;
-          const py = 1000 - ph - 20;
-          ctx.shadowColor = "rgba(0,0,0,0.9)";
-          ctx.shadowBlur = 40; ctx.shadowOffsetX = 12; ctx.shadowOffsetY = 12;
-          ctx.drawImage(personImg, px, py - 120, pw, ph);
+          const px = (W - pw) / 2;
+          const py = H - ph + 60;
+
+          ctx.shadowColor = "rgba(0,0,0,0.95)";
+          ctx.shadowBlur = 80;
+          ctx.shadowOffsetX = 20;
+          ctx.shadowOffsetY = 30;
+          ctx.drawImage(personImg, px, py, pw, ph);
+          ctx.shadowColor = "rgba(0,0,50,0.5)";
+          ctx.shadowBlur = 40;
+          ctx.shadowOffsetX = -10;
+          ctx.shadowOffsetY = 15;
+          ctx.drawImage(personImg, px, py, pw, ph);
           ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
 
           if (slogan) {
-            ctx.fillStyle = "rgba(0,0,0,0.6)";
-            ctx.fillRect(100, 650, 600, 70);
-            ctx.font = "bold 32px Arial";
+            ctx.fillStyle = "rgba(0,0,0,0.7)";
+            ctx.fillRect(80, H - 200, W - 160, 80);
+            ctx.font = "bold 38px Arial";
             ctx.fillStyle = "#ffffff";
             ctx.textAlign = "center";
-            ctx.shadowColor = "#ff2d78"; ctx.shadowBlur = 10;
-            ctx.fillText(slogan, 400, 695);
+            ctx.shadowColor = "#ff2d78"; ctx.shadowBlur = 15;
+            ctx.fillText(slogan, W/2, H - 150);
             ctx.shadowBlur = 0;
           }
 
           if (brandLogo) {
             const logoImg = new Image();
             logoImg.onload = () => {
-              ctx.drawImage(logoImg, 620, 80, 100, 100);
+              ctx.drawImage(logoImg, W - 150, 80, 110, 110);
               URL.revokeObjectURL(personUrl);
               resolve(canvas.toDataURL("image/png"));
             };
@@ -255,7 +284,44 @@ export default function BillboardApp() {
       {confetti.map(p => (
         <div key={p.id} style={{ position: "fixed", left: `${p.x}%`, top: "-20px", width: p.size, height: p.size, background: p.color, borderRadius: "2px", zIndex: 9999, animation: `fall ${1.5 + p.delay}s ease-in forwards` }} />
       ))}
-      <style>{`@keyframes fall { to { transform: translateY(110vh) rotate(720deg); opacity: 0; } }`}</style>
+      <style>{`
+        @keyframes fall { to { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
+        @keyframes float3d {
+          0%   { transform: perspective(800px) rotateY(-3deg) rotateX(2deg) scale(1); }
+          25%  { transform: perspective(800px) rotateY(3deg) rotateX(-1deg) scale(1.02); }
+          50%  { transform: perspective(800px) rotateY(2deg) rotateX(3deg) scale(1.01); }
+          75%  { transform: perspective(800px) rotateY(-2deg) rotateX(-2deg) scale(1.02); }
+          100% { transform: perspective(800px) rotateY(-3deg) rotateX(2deg) scale(1); }
+        }
+        @keyframes glowPulse {
+          0%, 100% { box-shadow: 0 0 30px rgba(255,45,120,0.4), 0 0 60px rgba(0,207,255,0.2); }
+          50% { box-shadow: 0 0 50px rgba(255,45,120,0.7), 0 0 100px rgba(0,207,255,0.4); }
+        }
+        @keyframes scanline {
+          0% { background-position: 0 0; }
+          100% { background-position: 0 100px; }
+        }
+        .billboard-3d {
+          animation: float3d 4s ease-in-out infinite, glowPulse 2s ease-in-out infinite;
+          border-radius: 16px;
+          overflow: hidden;
+          position: relative;
+        }
+        .billboard-3d::after {
+          content: '';
+          position: absolute;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 3px,
+            rgba(0,207,255,0.03) 3px,
+            rgba(0,207,255,0.03) 4px
+          );
+          pointer-events: none;
+          animation: scanline 2s linear infinite;
+        }
+      `}</style>
 
       <div style={{ maxWidth: 520, margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: 24 }}>
@@ -346,9 +412,11 @@ export default function BillboardApp() {
             {error && <div style={{ marginTop: 12, padding: "14px", background: "rgba(255,80,80,0.1)", border: "1px solid rgba(255,80,80,0.2)", borderRadius: 10, fontSize: 13, color: "#ff8080" }}>⚠️ {error}</div>}
 
             {result && (
-              <div style={{ marginTop: 24, border: "1px solid rgba(255,45,120,0.3)", borderRadius: 16, overflow: "hidden" }}>
-                <img src={result} alt="Tu billboard" style={{ width: "100%", display: "block" }} />
-                <div style={{ display: "flex", gap: 8, padding: 12 }}>
+              <div style={{ marginTop: 24 }}>
+                <div className="billboard-3d">
+                  <img src={result} alt="Tu billboard" style={{ width: "100%", display: "block" }} />
+                </div>
+                <div style={{ display: "flex", gap: 8, padding: "12px 0" }}>
                   <button onClick={() => share(result)} style={{ flex: 2, padding: "12px", background: "linear-gradient(135deg,#ff2d78,#ff6b00)", border: "none", borderRadius: 10, color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>📤 Compartir</button>
                   <button onClick={() => { const a = document.createElement("a"); a.href = result; a.download = `billboard-${Date.now()}.png`; a.click(); }} style={{ flex: 1, padding: "12px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontSize: 13, cursor: "pointer" }}>⬇️</button>
                   <button onClick={() => { setResult(null); setPhoto(null); setPhotoFile(null); setPhotoUrl(null); }} style={{ flex: 1, padding: "12px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontSize: 13, cursor: "pointer" }}>🔄</button>
