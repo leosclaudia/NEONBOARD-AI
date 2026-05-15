@@ -203,26 +203,26 @@ export default function BillboardApp() {
         @keyframes sceneIn  { from{opacity:0;transform:translateY(16px) scale(.97);} to{opacity:1;transform:translateY(0) scale(1);} }
         @keyframes sceneOut { from{opacity:1;transform:translateY(0) scale(1);}       to{opacity:0;transform:translateY(-14px) scale(.97);} }
 
-        /* Smooth float — person breathing */
+        /* Subtle float — barely moves, like breathing */
         @keyframes float {
-          0%,100%{ transform:translateX(-50%) translateY(0px); }
-          50%    { transform:translateX(-50%) translateY(-13px); }
+          0%,100%{ transform:translateX(-50%) translateY(0px) scale(1); }
+          50%    { transform:translateX(-50%) translateY(-8px) scale(1.008); }
         }
         @keyframes shadowSync {
-          0%,100%{ transform:translateX(-50%) scaleX(1);    opacity:.6; }
-          50%    { transform:translateX(-50%) scaleX(.65);  opacity:.2; }
+          0%,100%{ transform:translateX(-50%) scaleX(1);   opacity:.55; }
+          50%    { transform:translateX(-50%) scaleX(.78); opacity:.22; }
         }
-        /* Entry animation for generated person */
+        /* Entry: fade up softly */
         @keyframes personIn {
-          from{ opacity:0; transform:translateX(-50%) translateY(40px) scale(.9); filter:blur(5px); }
-          to  { opacity:1; transform:translateX(-50%) translateY(0)    scale(1);  filter:blur(0);   }
+          from{ opacity:0; transform:translateX(-50%) translateY(28px); filter:blur(4px); }
+          to  { opacity:1; transform:translateX(-50%) translateY(0);    filter:blur(0);   }
         }
-        .person-float  { animation: float      5s ease-in-out infinite; }
-        .shadow-sync   { animation: shadowSync 5s ease-in-out infinite; }
-        .person-entry  {
+        .person-float { animation: float     5.5s ease-in-out infinite; }
+        .shadow-sync  { animation: shadowSync 5.5s ease-in-out infinite; }
+        .person-entry {
           animation:
-            personIn  .8s cubic-bezier(.22,1,.36,1) forwards,
-            float      5s ease-in-out .85s infinite;
+            personIn  .75s cubic-bezier(.22,1,.36,1) forwards,
+            float      5.5s ease-in-out .8s infinite;
         }
 
         /* Glows */
@@ -354,17 +354,15 @@ export default function BillboardApp() {
                 className="person-float"
                 style={{
                   position:"absolute",
-                  bottom:"18%",          /* feet sit at 18% from bottom inside frame */
+                  bottom:"14%",
                   left:"50%",
-                  transform:"translateX(-50%)",
-                  height:"165%",         /* taller than frame → breaks out top */
-                  width:"auto",
-                  maxWidth:"88%",
+                  width:"82%",
+                  height:"auto",
+                  maxHeight:"135%",
                   zIndex:9,
-                  objectFit:"cover",
-                  objectPosition:"top center",  /* show head/torso, cut feet if needed */
+                  objectFit:"contain",
                   display:"block",
-                  filter:"drop-shadow(0 25px 20px rgba(0,0,0,.95)) drop-shadow(0 6px 10px rgba(0,0,0,.7))",
+                  filter:"drop-shadow(0 22px 18px rgba(0,0,0,.95)) drop-shadow(0 5px 8px rgba(0,0,0,.65))",
                 }}
                 onError={e => { e.target.style.display="none"; }}
               />
@@ -550,11 +548,11 @@ export default function BillboardApp() {
                         style={{ position:"absolute",bottom:"-4%",left:"50%",width:"55%",height:"4%",background:"radial-gradient(ellipse,rgba(0,0,0,.88) 0%,transparent 70%)",zIndex:5,borderRadius:"50%",pointerEvents:"none" }}
                       />
 
-                      {/* ── PERSON ──
-                          overflow:visible on parent → person breaks out of frame
-                          bottom: anchor feet inside frame
-                          height: bigger than billboard → head pops above border
-                          objectPosition: top → show head/body, not feet
+                      {/* ── PERSON / PRODUCT ──
+                          Centered in billboard.
+                          Width-based so any image (tall person OR square product) fits.
+                          bottom:5% keeps it above slogan.
+                          overflow:visible on parent lets it break the top border.
                       ── */}
                       <img
                         src={personBlob}
@@ -562,16 +560,16 @@ export default function BillboardApp() {
                         className="person-entry"
                         style={{
                           position:"absolute",
-                          bottom:"15%",
+                          bottom:"12%",
                           left:"50%",
-                          height:"160%",
-                          width:"auto",
-                          maxWidth:"92%",
+                          /* Width fills most of the frame; height auto → natural proportions */
+                          width:"85%",
+                          height:"auto",
+                          maxHeight:"130%",  /* allows breaking out the top */
                           zIndex:9,
                           objectFit:"contain",
-                          objectPosition:"bottom center",
                           transformOrigin:"bottom center",
-                          filter:"drop-shadow(0 28px 22px rgba(0,0,0,.97)) drop-shadow(0 6px 10px rgba(0,0,0,.75))",
+                          filter:"drop-shadow(0 20px 18px rgba(0,0,0,.95)) drop-shadow(0 5px 8px rgba(0,0,0,.7))",
                         }}
                       />
                     </div>
