@@ -331,9 +331,9 @@ export default function BillboardApp() {
                     className="person-float"
                     style={{
                       position: "absolute",
-                      bottom: "-15%",
+                      bottom: "-20%",
                       left: "50%",
-                      height: "125%",
+                      height: "140%",
                       width: "auto",
                       maxWidth: "95%",
                       zIndex: 5,
