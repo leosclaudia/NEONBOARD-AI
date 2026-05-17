@@ -457,11 +457,11 @@ export default function BillboardApp() {
                     className="pin"
                     style={{
                       position:"absolute",
-                      bottom:"8%",
+                      bottom:"-5%",
                       left:"50%",
-                      width:"80%",
-                      height:"auto",
-                      maxHeight:"152%",
+                      height:"130%",
+                      width:"auto",
+                      maxWidth:"95%",
                       zIndex:9,
                       objectFit:"contain",
                       objectPosition:"bottom center",
